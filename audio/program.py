@@ -21,7 +21,7 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 2
 RATE = 48000
 CHUNK = 1024
-RECORD_SECONDS = 5
+RECORD_SECONDS = 20
 WAVE_OUTPUT_FILENAME = "file.wav"
  
 recorded = False
@@ -29,10 +29,13 @@ recorded = False
 delete_time = 0
 delete_limit = 5
 
-
 reminder_time = time.time()
 reminder_limit = 20
 
+talking_time = time.time()
+talking_limit = 2
+
+noise_samples = 5
 
 while True:
     current = time.time()
@@ -43,16 +46,35 @@ while True:
         if not recorded:
             print("begin recording")
             frames = []
+            bgnoise = 0
             audio = pyaudio.PyAudio()
             stream = audio.open(format=FORMAT, channels=CHANNELS,
                             rate=RATE, input=True,
                             frames_per_buffer=CHUNK)
+            started = False
+            talking = False
             for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
                 data = stream.read(CHUNK)
                 as_ints = array('h', data)
                 max_value = max(as_ints)
-                print(max_value)
+                # print(max_value)
+                if i < noise_samples:
+                    bgnoise += max_value / noise_samples
+                    print("sample")
+                else:
+                    if max_value > 3 * bgnoise:
+                        print("LOUD")
+                        started = True
+                        talking = True
+                        talking_time = time.time()
+                    else:
+                        print("QUIET")
+                        talking = False
+                        if started and time.time() - talking_time > talking_limit:
+                            print("done")
+                            break
                 frames.append(data)
+                
             print("finished recording")
             stream.stop_stream()
             stream.close()
