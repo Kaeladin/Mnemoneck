@@ -1,0 +1,107 @@
+from array import array
+import pyaudio
+import wave
+import pygame
+import RPi.GPIO as GPIO
+import time
+from time import sleep
+
+A = 11
+B = 12
+
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(A, GPIO.IN)
+GPIO.setup(B, GPIO.IN)
+
+pressed_A = False
+pressed_B = False
+
+# RECORDING INFO
+FORMAT = pyaudio.paInt16
+CHANNELS = 2
+RATE = 48000
+CHUNK = 1024
+RECORD_SECONDS = 5
+WAVE_OUTPUT_FILENAME = "file.wav"
+ 
+recorded = False
+
+delete_time = 0
+delete_limit = 10
+
+
+reminder_time = time.time()
+reminder_limit = 20
+
+
+while True:
+    current = time.time()
+    if (not GPIO.input(A) and not pressed_A):
+        pressed_A = True
+
+        if not recorded:
+            print("begin recording")
+            audio = pyaudio.PyAudio()
+            stream = audio.open(format=FORMAT, channels=CHANNELS,
+                            rate=RATE, input=True,
+                            frames_per_buffer=CHUNK)
+            for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+                data = stream.read(CHUNK)
+                as_ints = array('h', data)
+                max_value = max(as_ints)
+                print(max_value)
+                frames.append(data)
+            print("finished recording")
+            stream.stop_stream()
+            stream.close()
+            audio.terminate()
+            
+            waveFile = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+            waveFile.setnchannels(CHANNELS)
+            waveFile.setsampwidth(audio.get_sample_size(FORMAT))
+            waveFile.setframerate(RATE)
+            waveFile.writeframes(b''.join(frames))
+            waveFile.close()
+
+            recorded = True
+        else:
+            print("replay by request")
+            pygame.mixer.init(48000)
+            pygame.mixer.music.load("file.wav")
+            pygame.sndarray.array(pygame.mixer.music)
+            pygame.mixer.music.play()
+            while pygame.mixer.music.get_busy() == True:
+                continue
+
+    elif (not GPIO.input(B) and not pressed_B and recorded:
+        if current - delete_time > delete_limit:
+            pressed_B = True
+            print("delete warning")
+            pygame.mixer.init(48000)
+            pygame.mixer.music.load("file.wav")
+            pygame.sndarray.array(pygame.mixer.music)
+            pygame.mixer.music.play()
+            while pygame.mixer.music.get_busy() == True:
+                continue
+            
+            delete_time = time.time()
+        elif current - delete_time <= delete_limit :
+            recorded = False
+            print("deleted")
+    if current - reminder_time > reminder_limit and recorded:
+        print("reminder")
+        pygame.mixer.init(48000)
+        pygame.mixer.music.load("file.wav")
+        pygame.sndarray.array(pygame.mixer.music)
+        pygame.mixer.music.play()
+        while pygame.mixer.music.get_busy() == True:
+            continue
+        reminder_time = time.time()
+
+    # Released buttons
+    if (GPIO.input(A) and pressed_A):
+        pressed_A = False
+    if (GPIO.input(B) and pressed_B):
+        pressed_B = False
+        
+    sleep(0.01)
