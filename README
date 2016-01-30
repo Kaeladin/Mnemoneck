@@ -1,7 +1,9 @@
 Dependencies:
 python 3.4.4
 python: pygame
-google-calender api
+python: pysound
+google-api-python-client
 python: time
 python: multiprocessing
 pip
+
