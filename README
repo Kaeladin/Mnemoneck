@@ -4,3 +4,4 @@ python: pygame
 google-calender api
 python: time
 python: multiprocessing
+pip
