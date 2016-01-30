@@ -68,7 +68,7 @@ def main():
 
         for event in events:
             start = event['start'].get('dateTime', event['start'].get('date'))
-            schedule.write(start+ event['summary']+'\n')
+            schedule.write(start+' '+ event['summary']+'\n')
 
     schedule.closed
 
