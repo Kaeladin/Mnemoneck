@@ -8,10 +8,12 @@ from time import sleep
 
 A = 11
 B = 12
+T = 15
 
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(A, GPIO.IN)
 GPIO.setup(B, GPIO.IN)
+GPIO.setup(T, GPIO.IN)
 
 pressed_A = False
 pressed_B = False
@@ -22,7 +24,7 @@ CHANNELS = 2
 RATE = 48000
 CHUNK = 1024
 RECORD_SECONDS = 20
-WAVE_OUTPUT_FILENAME = "file.wav"
+WAVE_OUTPUT_FILENAME = "memo.wav"
  
 recorded = False
 
@@ -38,6 +40,14 @@ talking_limit = 2
 noise_samples = 5
 
 while True:
+
+    if(not GPIO.input(T)):  #change or comment out for testing!!!
+        #print(GPIO.input(T))
+        reminder_limit = 120
+    elif(GPIO.input(T)):
+        #print(GPIO.input(T))
+        reminder_limit = 600
+        
     current = time.time()
     if (not GPIO.input(A) and not pressed_A):
         print("A PRESS")
@@ -116,7 +126,7 @@ while True:
         elif current - delete_time <= delete_limit :
             recorded = False
             print("deleted")
-    if current - reminder_time > reminder_limit and recorded:
+    if time.time() - reminder_time > reminder_limit and recorded:
         print("reminder")
         pygame.mixer.init(48000)
         pygame.mixer.music.load("file.wav")
